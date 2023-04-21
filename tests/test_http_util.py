@@ -52,6 +52,9 @@ class TestHttpUtils(unittest.IsolatedAsyncioTestCase):
             self.fail('expected timeout error')
         except TimeoutError as e:
             self.assertIsInstance(e, TimeoutError)
+        except asyncio.exceptions.TimeoutError as e:
+            # Python 3.10 TimeoutError is different from TimeoutError in 3.11
+            self.assertIsInstance(e, asyncio.exceptions.TimeoutError)
 
 
 if __name__ == '__main__':
