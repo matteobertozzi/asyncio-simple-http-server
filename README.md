@@ -3,6 +3,12 @@
 This package contains a really Simple Http API Server using asyncio.
 **It is not meant to be used in production**. It is more a lightweight alternative to SimpleHTTPServer but for writing HTTP APIs.
 
+### Install the package
+You can find the package at https://pypi.org/project/asyncio-simple-http-server. and install it using pip. (Python >=3.8 is required)
+```bash
+$ pip install asyncio-simple-http-server
+```
+
 ### Usage Example
 To start the server is the usual straightforward asyncio server code,
 plus some registration for your HTTP API handlers.
@@ -47,7 +53,7 @@ class MyHandler:
     # return values will be converted with json.dumps()
     @uri_mapping('/test-get')
     def test_get(self):
-        return {a: 10}
+        return {'a': 10}
 
     # In this case the mapping says that we want a POST method
     # and by passing an argument named 'body' we will get the
