@@ -100,6 +100,9 @@ def _clean_path(path):
 
 async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
     line = await asyncio.wait_for(reader.readuntil(b'\r\n'), timeout)
+    if not line:
+        return None
+
     words = line.decode().split()
 
     method, path, version = (words[0], words[1], words[2])
@@ -108,10 +111,11 @@ async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
     headers = HttpHeaders()
     while True:
         line = await asyncio.wait_for(reader.readuntil(b'\r\n'), timeout)
-        if line == b'\r\n':
+        if not line or line == b'\r\n':
             break
-        key, value = line.decode().strip().split(': ', 1)
-        headers.add(key, value)
+
+        key, value = line.decode().split(': ', 1)
+        headers.add(key.strip(), value.strip())
 
     content_length = headers.get('content-length', -1, int)
 

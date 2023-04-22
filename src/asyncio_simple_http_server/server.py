@@ -168,7 +168,6 @@ class HttpServer:
 
         async with self._server:
             await self._server.serve_forever()
-        print('foo')
 
     def bind_address_description(self):
         return ', '.join(str(sock.getsockname()) for sock in self._server.sockets)
@@ -177,6 +176,8 @@ class HttpServer:
         try:
             while True:
                 request = await http_parser(reader, self.read_timeout)
+                if request is None:
+                    break
                 logger.debug('received request %s %s', request.method, request.path)
 
                 route, method = self._find_route(request)
@@ -188,7 +189,7 @@ class HttpServer:
                     response = self.build_http_404_response(request.method, request.path)
                     await self._send_response(writer, request, response)
 
-        except asyncio.exceptions.IncompleteReadError as e:
+        except (TimeoutError, asyncio.TimeoutError, asyncio.exceptions.IncompleteReadError) as e:
             logger.warning('got a failure %s. disconnecting the client', type(e))
         except Exception as e:
             logger.exception('got a failure %s. disconnecting the client: %s', type(e), e)
