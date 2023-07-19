@@ -142,6 +142,12 @@ class HttpServer:
         self._regex_routes = []
         self._server = None
 
+    async def __aenter__(self):
+        pass
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.close()
+
     def add_default_response_headers(self, headers: HttpHeaders):
         self._default_response_headers.merge(headers)
 
@@ -162,12 +168,20 @@ class HttpServer:
 
         self._server = await asyncio.start_server(self._handle_client, host, port)
 
+    async def close(self):
+        if self._server is not None:
+            self._server.close()
+            self._server = None
+
     async def serve_forever(self):
         if self._server is None:
             raise RuntimeError('Server not started yet')
 
-        async with self._server:
-            await self._server.serve_forever()
+        try:
+            async with self._server:
+                await self._server.serve_forever()
+        finally:
+            self._server = None
 
     def bind_address_description(self):
         return ', '.join(str(sock.getsockname()) for sock in self._server.sockets)
