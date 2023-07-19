@@ -46,12 +46,16 @@ class MyHandler:
         headers.set('X-Foo', 'custom stuff')
         return HttpResponse(200, headers, b'test-body')
 
+    @uri_mapping('/test-delete', method='DELETE')
+    def test_delete(self, body):
+        return {'x': 1, 'y': body}
 
 async def main():
     http_server = HttpServer()
     http_server.add_handler(MyHandler())
     http_server.add_default_response_headers({
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': '*'
     })
 
     await http_server.start('127.0.0.1', 8888)
