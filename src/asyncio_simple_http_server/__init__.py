@@ -16,3 +16,5 @@
 #
 from .server import HttpServer, uri_mapping, uri_variable_mapping, uri_pattern_mapping
 from .http_util import HttpRequest, HttpResponse, HttpHeaders
+
+__version__ = '0.0.4'
