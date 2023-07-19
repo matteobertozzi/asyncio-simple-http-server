@@ -133,6 +133,12 @@ def uri_variable_mapping(path: str, method: str | list[str] = 'GET'):
     uri_variables, uri_regex = _uri_variable_to_pattern(path)
     return lambda f: _uri_route_decorator(f, uri_regex, method, uri_variables)
 
+class HttpResponseException(Exception):
+    response: HttpResponse
+
+    def __init__(self, status_code: int, headers: HttpHeaders | None = None, body: bytes | None = None) -> None:
+        super().__init__()
+        self.response = HttpResponse(status_code, headers, body)
 
 class HttpServer:
     def __init__(self) -> None:
@@ -231,10 +237,11 @@ class HttpServer:
                     body = json.dumps(response).encode('utf-8')
                     response = HttpResponse(200, None, body)
             await self._send_response(writer, request, response)
-
+        except HttpResponseException as e:
+            await self._send_response(writer, request, e.response)
         except Exception as e:
-            logger.exception('got a %s failure during the execution of the request %s %s', type(e), request.method,
-                             request.path)
+            logger.exception('got a %s failure during the execution of the request %s %s',
+                             type(e), request.method, request.path)
             response = self.build_http_500_response(e)
             await self._send_response(writer, request, response)
 

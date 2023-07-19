@@ -96,6 +96,16 @@ class MyHandler:
         return HttpResponse(200, file_path='/path/of/my-file')
 ```
 
+### Response Exceptions
+You can also control the flow using **HttpResponseException**. If not catched by your code it will result in a response with the http status code, headers and body specified.
+```python
+@uri_mapping('/test-exception')
+def test_exception(self):
+    headers = HttpHeaders()
+    headers.set('X-Foo', 'custom stuff')
+    raise HttpResponseException(400, headers, b'custom-body')
+```
+
 ## Routes with patterns
 Sometimes static routes are not enough. and you want a dynamic pattern.
 You can use @uri_variable_mapping and @uri_pattern_mapping to do exactly that.

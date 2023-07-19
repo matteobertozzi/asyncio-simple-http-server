@@ -1,4 +1,4 @@
-from asyncio_simple_http_server import HttpServer, HttpRequest, HttpResponse, HttpHeaders, uri_mapping, uri_variable_mapping, uri_pattern_mapping
+from asyncio_simple_http_server import HttpServer, HttpResponseException, HttpRequest, HttpResponse, HttpHeaders, uri_mapping, uri_variable_mapping, uri_pattern_mapping
 import logging
 import asyncio
 
@@ -49,6 +49,12 @@ class MyHandler:
     @uri_mapping('/test-delete', method='DELETE')
     def test_delete(self, body):
         return {'x': 1, 'y': body}
+
+    @uri_mapping('/test-exception')
+    def test_exception(self):
+        headers = HttpHeaders()
+        headers.set('X-Foo', 'custom stuff')
+        raise HttpResponseException(400, headers, b'custom-body')
 
 async def main():
     http_server = HttpServer()

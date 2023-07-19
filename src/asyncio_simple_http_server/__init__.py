@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-from .server import HttpServer, uri_mapping, uri_variable_mapping, uri_pattern_mapping
+from .server import HttpServer, HttpResponseException, uri_mapping, uri_variable_mapping, uri_pattern_mapping
 from .http_util import HttpRequest, HttpResponse, HttpHeaders
 
-__version__ = '0.0.4'
+__version__ = '0.0.5'
