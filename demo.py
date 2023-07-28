@@ -9,9 +9,8 @@ class MyHandler:
         pass
 
     @uri_mapping('/bar')
-    def bar(self, body, headers):
-        return {'a': 10}
-
+    def bar(self, headers, query_params):
+        return {'a': 10, 'h': dict(headers.items()), 'q': query_params}
 
     @uri_mapping('/test-post', method='POST')
     def test_post(self, body):

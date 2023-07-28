@@ -17,6 +17,7 @@
 from __future__ import annotations
 from collections.abc import Generator, KeysView
 from dataclasses import dataclass
+from urllib.parse import parse_qs
 from http import HTTPStatus
 import asyncio
 import os
@@ -75,6 +76,7 @@ class HttpHeaders:
 class HttpRequest:
     method: str
     path: str
+    query_params: dict[str, list[str]]
     version: str
     headers: HttpHeaders
     body: bytes | None = None
@@ -97,6 +99,11 @@ def _clean_path(path):
         path = '/' + path.lstrip('/')  # Reduce to a single /
     return path
 
+def _parse_path(path):
+    index = path.find('?')
+    if index < 0:
+        return path, {}
+    return path[:index], parse_qs(path[index+1:])
 
 async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
     line = await asyncio.wait_for(reader.readuntil(b'\r\n'), timeout)
@@ -107,6 +114,7 @@ async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
 
     method, path, version = (words[0], words[1], words[2])
     path = _clean_path(path)
+    path, query_params = _parse_path(path)
 
     headers = HttpHeaders()
     while True:
@@ -124,7 +132,7 @@ async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
     else:
         body = None
 
-    return HttpRequest(method, path, version, headers, body)
+    return HttpRequest(method, path, query_params, version, headers, body)
 
 
 async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest, response: HttpResponse):

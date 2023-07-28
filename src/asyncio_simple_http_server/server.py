@@ -65,12 +65,14 @@ def _convert_params(request: HttpRequest, route: UriRoute, method):
     for param_name in route.call_args[args_index:]:
         if param_name == 'request':
             args.append(request)
-        elif param_name == 'headers':
-            args.append(request.headers)
         elif param_name == 'raw_body':
             args.append(request.body)
         elif param_name == 'body':
             args.append(json.loads(request.body))
+        elif param_name == 'query_params':
+            args.append(request.query_params)
+        elif param_name == 'headers':
+            args.append(request.headers)
         elif param_name == 'uri_variables':
             if len(route.uri_variables) == 1:
                 uri_variables = dict(zip(route.uri_variables, re.findall(route.path, request.path)))

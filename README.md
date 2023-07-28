@@ -71,6 +71,7 @@ class MyHandler:
 To receive the data of the HTTP request we use special parameter names, so if name a variable:
  * **request**: will contains an HttpRequest object, which is the full request (method, path, header, body).
  * **headers**: will contains an HttpHeaders object, which is a map of header name to values (a key can have multiple values).
+ * **query_params** will contains a dict[str, list[str]], which is a map of the query param name to list of values.
  * **raw_body**: will contains the raw body as bytes.
  * **body**: will contains the body converted from json using json.loads().
  * **uri_variables**: will contains a dict of the variable specified in the @uri_variable_mapping and extracted from the path.
