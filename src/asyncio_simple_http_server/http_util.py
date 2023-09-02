@@ -18,7 +18,10 @@ from __future__ import annotations
 from collections.abc import Generator, KeysView
 from dataclasses import dataclass
 from urllib.parse import parse_qs
+from time import monotonic
 from http import HTTPStatus
+
+import logging
 import asyncio
 import os
 
@@ -74,6 +77,7 @@ class HttpHeaders:
 
 @dataclass
 class HttpRequest:
+    stamp: float
     method: str
     path: str
     query_params: dict[str, list[str]]
@@ -105,7 +109,7 @@ def _parse_path(path):
         return path, {}
     return path[:index], parse_qs(path[index+1:])
 
-async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
+async def http_parser(reader: asyncio.StreamReader, timeout: float, http_trace: bool = True) -> HttpRequest:
     line = await asyncio.wait_for(reader.readuntil(b'\r\n'), timeout)
     if not line:
         return None
@@ -132,10 +136,13 @@ async def http_parser(reader: asyncio.StreamReader, timeout=10) -> HttpRequest:
     else:
         body = None
 
-    return HttpRequest(method, path, query_params, version, headers, body)
+    request = HttpRequest(monotonic(), method, path, query_params, version, headers, body)
+    if http_trace:
+        dump_http_request(request)
+    return request
 
 
-async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest, response: HttpResponse):
+async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest, response: HttpResponse, http_trace: bool = True) -> HttpRequest:
     http_status = HTTPStatus(response.status_code)
     headers = response.headers if response.headers else HttpHeaders()
 
@@ -145,6 +152,9 @@ async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest,
     elif response.file_path:
         content_length = os.stat(response.file_path).st_size
     headers.set('content-length', content_length)
+
+    if http_trace:
+        dump_http_response(request, response)
 
     writer.write(f'HTTP/1.1 {http_status.value} {http_status.phrase}\r\n'.encode('utf-8'))
     for key, value in headers.items():
@@ -157,3 +167,25 @@ async def http_send_response(writer: asyncio.StreamWriter, request: HttpRequest,
         with open(response.file_path, 'rb') as fd:
             await asyncio.get_event_loop().sendfile(writer.transport, fd, 0, fallback=True)
     await writer.drain()
+
+http_logger = logging.getLogger('http_trace')
+
+def _dump_http_body(tag: str, headers: HttpHeaders, body: bytes | None):
+    content_type = headers.get('content-type')
+    if body:
+        if content_type and content_type.startswith('text/') or content_type == 'application/json':
+            http_logger.debug('%s: length:%s: %s', tag, len(body), body)
+        else:
+            http_logger.debug('%s: length:%s', tag, len(body))
+    else:
+        http_logger.debug('%s: length:0 NO-BODY', tag)
+
+def dump_http_request(request: HttpRequest):
+    http_logger.debug('REQ: %s %s', request.method, request.path)
+    http_logger.debug('REQ-HEADERS: %s', dict(request.headers.items()))
+    _dump_http_body('REQ-BODY', request.headers, request.body)
+
+def dump_http_response(request: HttpRequest, response: HttpResponse):
+    http_logger.debug('RESP: %s %s %s execTime:%s', response.status_code, request.method, request.path, monotonic() - request.stamp)
+    http_logger.debug('RESP-HEADERS: %s', dict(response.headers.items()))
+    _dump_http_body('RESP-BODY', response.headers, response.body)

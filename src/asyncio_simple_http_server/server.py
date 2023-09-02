@@ -149,12 +149,16 @@ class HttpServer:
         self._static_routes = {}
         self._regex_routes = []
         self._server = None
+        self._debug_http = True
 
     async def __aenter__(self):
         pass
 
     async def __aexit__(self, exc_type, exc, tb):
         await self.close()
+
+    def set_http_debug_enabled(self, enabled: bool):
+        self._debug_http = enabled
 
     def add_default_response_headers(self, headers: HttpHeaders):
         self._default_response_headers.merge(headers)
@@ -197,7 +201,7 @@ class HttpServer:
     async def _handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter) -> None:
         try:
             while True:
-                request = await http_parser(reader, self.read_timeout)
+                request = await http_parser(reader, self.read_timeout, self._debug_http)
                 if request is None:
                     break
                 logger.debug('received request %s %s', request.method, request.path)
@@ -252,7 +256,7 @@ class HttpServer:
             response.headers.merge(self._default_response_headers)
         else:
             response.headers = self._default_response_headers
-        await http_send_response(writer, request, response)
+        await http_send_response(writer, request, response, self._debug_http)
 
     def _find_route(self, request: HttpRequest):
         mapping = self._static_routes.get(f'{request.method}:{request.path}')
