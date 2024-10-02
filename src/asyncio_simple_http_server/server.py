@@ -145,6 +145,7 @@ class HttpResponseException(Exception):
 class HttpServer:
     def __init__(self) -> None:
         self.read_timeout = 10.0
+        self.trace_client_disconnection = False
         self._default_response_headers = HttpHeaders()
         self._static_routes = {}
         self._regex_routes = []
@@ -216,7 +217,8 @@ class HttpServer:
                     await self._send_response(writer, request, response)
 
         except (TimeoutError, asyncio.TimeoutError, asyncio.exceptions.IncompleteReadError) as e:
-            logger.warning('got a failure %s. disconnecting the client', type(e))
+            if self.trace_client_disconnection:
+                logger.debug('got a failure %s. disconnecting the client', type(e))
         except Exception as e:
             logger.exception('got a failure %s. disconnecting the client: %s', type(e), e)
         finally:

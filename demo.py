@@ -55,8 +55,11 @@ class MyHandler:
         headers.set('X-Foo', 'custom stuff')
         raise HttpResponseException(400, headers, b'custom-body')
 
+
 async def main():
     http_server = HttpServer()
+    http_server.trace_client_disconnection = False
+    http_server.read_timeout = 10
     http_server.set_http_debug_enabled(True)
     http_server.add_handler(MyHandler())
     http_server.add_default_response_headers({
@@ -64,7 +67,7 @@ async def main():
         'Access-Control-Allow-Methods': '*'
     })
 
-    await http_server.start('127.0.0.1', 8888)
+    await http_server.start('0.0.0.0', 8888)
     print(f'Serving on {http_server.bind_address_description()}')
 
     await http_server.serve_forever()
